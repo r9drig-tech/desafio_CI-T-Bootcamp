@@ -1,0 +1,83 @@
+version: '3.8'
+
+# Bootcamp CI&T — Do Prompt ao Agente
+# Pipeline de Dados para IA — Docker Compose
+
+services:
+
+  # ── Banco de dados PostgreSQL (Data Warehouse) ───────────────────────────
+  postgres:
+    image: postgres:15
+    container_name: data_warehouse
+    environment:
+      POSTGRES_USER:     ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB:       ${DB_NAME:-data_warehouse}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Apache Airflow ───────────────────────────────────────────────────────
+  airflow-webserver:
+    image: apache/airflow:2.9.1
+    container_name: airflow_webserver
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      AIRFLOW__CORE__EXECUTOR:                    LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN:        postgresql+psycopg2://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@postgres:5432/airflow
+      AIRFLOW__CORE__FERNET_KEY:                  ''
+      AIRFLOW__CORE__LOAD_EXAMPLES:               'false'
+      AIRFLOW__WEBSERVER__SECRET_KEY:             'ci_t_bootcamp_secret'
+      OPENAI_API_KEY:                             ${OPENAI_API_KEY}
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./src:/opt/airflow/dags/pipeline-dados-ia/src
+      - airflow_logs:/opt/airflow/logs
+    ports:
+      - "8080:8080"
+    command: webserver
+    restart: unless-stopped
+
+  airflow-scheduler:
+    image: apache/airflow:2.9.1
+    container_name: airflow_scheduler
+    depends_on:
+      - airflow-webserver
+    environment:
+      AIRFLOW__CORE__EXECUTOR:           LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@postgres:5432/airflow
+      OPENAI_API_KEY:                    ${OPENAI_API_KEY}
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./src:/opt/airflow/dags/pipeline-dados-ia/src
+      - airflow_logs:/opt/airflow/logs
+    command: scheduler
+    restart: unless-stopped
+
+  # ── Jupyter Notebook ─────────────────────────────────────────────────────
+  jupyter:
+    image: jupyter/scipy-notebook:latest
+    container_name: jupyter_lab
+    environment:
+      JUPYTER_ENABLE_LAB: "yes"
+      OPENAI_API_KEY:     ${OPENAI_API_KEY}
+    volumes:
+      - ./notebooks:/home/jovyan/notebooks
+      - ./src:/home/jovyan/src
+      - ./data:/home/jovyan/data
+    ports:
+      - "8888:8888"
+    command: start-notebook.sh --NotebookApp.token=''
+
+# ── Volumes ──────────────────────────────────────────────────────────────────
+volumes:
+  postgres_data:
+  airflow_logs:

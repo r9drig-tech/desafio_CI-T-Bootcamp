@@ -1,0 +1,34 @@
+version: 2
+
+sources:
+  - name: raw
+    description: "Dados brutos ingeridos no Data Lake"
+    tables:
+      - name: indicadores
+        description: "Tabela de indicadores econômicos brutos"
+        columns:
+          - name: data
+            description: "Data de referência do indicador"
+          - name: valor
+            description: "Valor numérico do indicador"
+          - name: indicador
+            description: "Nome do indicador"
+          - name: regiao
+            description: "Região geográfica"
+
+models:
+  - name: stg_indicadores
+    description: "Staging de indicadores — dados padronizados e validados"
+    columns:
+      - name: dt_referencia
+        description: "Data de referência (tipo DATE)"
+        tests: [not_null]
+      - name: vl_indicador
+        description: "Valor do indicador (tipo FLOAT)"
+        tests: [not_null]
+      - name: nm_indicador
+        description: "Nome padronizado do indicador"
+        tests: [not_null]
+      - name: nm_regiao
+        description: "Região padronizada"
+        tests: [not_null]
