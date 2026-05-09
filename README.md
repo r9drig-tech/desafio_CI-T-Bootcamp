@@ -1,7 +1,6 @@
 <!-- START_SECTION:header -->
 <div align="center">
-  <img alt="DIO Education" src="https://raw.githubusercontent.com/digitalinnovationone/template-github-trilha/main/.github/assets/logo.webp" width="100px" />
-  <h1>🚀 Desafio CI&T - Do Prompt ao Agente</h1>   
+  <h1> Do Prompt ao Agente</h1>   
 </div>
 <!--END_SECTION:header-->
 
