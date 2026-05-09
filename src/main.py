@@ -1,7 +1,7 @@
 """
 main.py
 Orquestrador principal do pipeline.
-Bootcamp CI&T — Do Prompt ao Agente
+Do Prompt ao Agente
 
 Uso:
     python src/main.py --pipeline full
